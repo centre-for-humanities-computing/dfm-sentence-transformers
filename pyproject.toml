@@ -1,0 +1,24 @@
+[tool.black]
+line-length=79
+
+[tool.poetry]
+name = "dfm-sentence-transformers"
+version = "0.1.0"
+description = "Module for finetuning dfm base-models to sentence transformers"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "dfm_sentence_transformers"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+confection = "^0.1.0"
+radicli = "^0.0.25"
+sentence-transformers = "^2.2.0"
+datasets = "^2.14.0"
+torch = "^2.1.0"
+catalogue = "^2.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
