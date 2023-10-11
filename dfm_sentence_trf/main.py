@@ -127,6 +127,6 @@ def push_to_hub(
         organization=organization,
         commit_message=commit_message,
         exist_ok=exist_ok,
-        replace_model_card=True,
+        replace_model_card=replace_model_card,
         train_datasets=datasets,
     )
