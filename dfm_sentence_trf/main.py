@@ -44,7 +44,7 @@ def finetune(
     raw_config = Config().from_disk(config_path)
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = {}
-    sent_trf_kwargs["device"] = cfg["training"].get("device", "cpu")
+    sent_trf_kwargs["device"] = cfg["model"].get("device", "cpu")
     if cache_folder is not None:
         sent_trf_kwargs["cache_folder"] = cache_folder
     pooling_kwargs = {}
