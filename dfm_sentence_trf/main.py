@@ -84,18 +84,15 @@ def finetune(
     "push_to_hub",
     config_path=Arg(help="Config file containing information about training."),
     model_path=Arg(
-        "--model-path",
-        "-m",
+        "--model_path",
         help="Path to the trained model to be pushed to the Hub.",
     ),
     organization=Arg(
         "--organization",
-        "-o",
         help="Organization in which you want to push your model.",
     ),
     commit_message=Arg(
         "--commit_message",
-        "-m",
         help="Message to commit while pushing.",
     ),
     exist_ok=Arg(
