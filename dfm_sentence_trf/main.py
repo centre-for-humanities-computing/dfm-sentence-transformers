@@ -7,6 +7,7 @@ from datasets import Dataset, DatasetDict, load_dataset
 from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 
+from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
 
 cli = Radicli()
@@ -74,12 +75,9 @@ def finetune(
         "--model_path",
         help="Path to the trained model to be pushed to the Hub.",
     ),
-    organization=Arg(
-        "--organization",
-        help="Organization in which you want to push your model.",
-    ),
     commit_message=Arg(
         "--commit_message",
+        "-m",
         help="Message to commit while pushing.",
     ),
     exist_ok=Arg(
@@ -96,21 +94,18 @@ def finetune(
 def push_to_hub(
     config_path: str,
     model_path: str,
-    organization: Optional[str] = None,
     commit_message: str = "Add new SentenceTransformer model.",
     exist_ok: bool = False,
     replace_model_card: bool = False,
 ):
     raw_config = Config().from_disk(config_path)
     cfg = registry.resolve(raw_config)
-    datasets = [task.dataset for task in cfg["tasks"]]
     repo_name = cfg["model"]["name"]
     model = SentenceTransformer(model_path)
-    model.save_to_hub(
-        repo_name=repo_name,
-        organization=organization,
+    save_to_hub(
+        model,
+        repo_name,
         commit_message=commit_message,
         exist_ok=exist_ok,
         replace_model_card=replace_model_card,
-        train_datasets=datasets,
     )
