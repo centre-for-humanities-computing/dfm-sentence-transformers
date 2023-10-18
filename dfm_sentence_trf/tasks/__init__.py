@@ -4,13 +4,20 @@ import catalogue
 from confection import registry
 from datasets import Dataset, DatasetDict
 
-from dfm_sentence_trf.tasks.multiplenegativeranking import \
-    MultipleNegativesRanking
+from dfm_sentence_trf.tasks.cosine_similarity import CosineSimilarity
+from dfm_sentence_trf.tasks.multiplenegativeranking import (
+    MultipleNegativesRanking,
+)
 from dfm_sentence_trf.tasks.task import Task, to_objectives
 
 registry.tasks = catalogue.create("confection", "tasks", entry_points=False)
 
-__all__ = ["MultipleNegativesRanking", "Task", "to_objectives"]
+__all__ = [
+    "MultipleNegativesRanking",
+    "Task",
+    "to_objectives",
+    "CosineSimilarity",
+]
 
 
 @registry.tasks.register("multiple_negatives_ranking")
@@ -21,3 +28,13 @@ def make_multiple_negatives_ranking(
     scale: float = 20.0,
 ) -> MultipleNegativesRanking:
     return MultipleNegativesRanking(dataset, sentence1, sentence2, scale)
+
+
+@registry.tasks.register("cosine_similarity")
+def make_cosine_similarity(
+    dataset: Union[Dataset, DatasetDict],
+    sentence1: str,
+    sentence2: str,
+    similarity: str,
+) -> CosineSimilarity:
+    return CosineSimilarity(dataset, sentence1, sentence2, similarity)
