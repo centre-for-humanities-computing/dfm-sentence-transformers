@@ -19,22 +19,33 @@ You have to specify basic model and training parameters, as well as all the task
 [model]
 name="dfm-sentence-encoder-small-v1"
 base_model="chcaa/dfm-encoder-small-v1"
-pooling_mode="mean"
 device="cpu"
 
 [training]
-epochs=10
+epochs=5
 warmup_steps=100
+batch_size=120
 
 [tasks]
 
 [tasks.bornholmsk]
-@tasks="contrastive-parallel"
-dataset="strombergnlp/bornholmsk_parallel"
+@tasks="multiple_negatives_ranking"
 sentence1="da_bornholm"
 sentence2="da"
-batch_size=60
-negative_samples=5
+
+[tasks.bornholmsk.dataset]
+@loaders="load_dataset"
+path="strombergnlp/bornholmsk_parallel"
+
+[tasks.hestenet]
+@tasks="multiple_negatives_ranking"
+sentence1="question"
+sentence2="answer"
+
+[tasks.hestenet.dataset]
+@loaders="load_dataset"
+path="some/local/path"
+
 ```
 
 Then you can train a sentence transformer by using the `finetune` command.
