@@ -7,6 +7,7 @@ from datasets import Dataset, DatasetDict, load_dataset
 from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 
+from dfm_sentence_trf.config import default_config
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
 
@@ -42,9 +43,10 @@ def finetune(
     cache_folder: Optional[str] = None,
 ):
     raw_config = Config().from_disk(config_path)
+    raw_config = default_config.merge(raw_config)
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = dict()
-    sent_trf_kwargs["device"] = cfg["model"].get("device", "cpu")
+    sent_trf_kwargs["device"] = cfg["model"]["device"]
     if cache_folder is not None:
         sent_trf_kwargs["cache_folder"] = cache_folder
 
@@ -56,9 +58,9 @@ def finetune(
         modules=[embedding, pooling], **sent_trf_kwargs
     )
 
-    epochs = cfg["training"].get("epochs", 5)
-    warmup_steps = cfg["training"].get("warmup_steps", 100)
-    batch_size = cfg["training"].get("batch_size", 30)
+    epochs = cfg["training"]["epochs"]
+    warmup_steps = cfg["training"]["warmup_steps"]
+    batch_size = cfg["training"]["batch_size"]
     tasks = list(cfg["tasks"].values())
     objectives = to_objectives(tasks, model, batch_size)
     model.fit(objectives, epochs=epochs, warmup_steps=warmup_steps)
