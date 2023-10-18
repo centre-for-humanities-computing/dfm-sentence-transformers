@@ -8,6 +8,7 @@ from dfm_sentence_trf.tasks.cosine_similarity import CosineSimilarity
 from dfm_sentence_trf.tasks.multiplenegativeranking import (
     MultipleNegativesRanking,
 )
+from dfm_sentence_trf.tasks.softmax import Softmax
 from dfm_sentence_trf.tasks.task import Task, to_objectives
 
 registry.tasks = catalogue.create("confection", "tasks", entry_points=False)
@@ -17,6 +18,7 @@ __all__ = [
     "Task",
     "to_objectives",
     "CosineSimilarity",
+    "Softmax",
 ]
 
 
@@ -38,3 +40,13 @@ def make_cosine_similarity(
     similarity: str,
 ) -> CosineSimilarity:
     return CosineSimilarity(dataset, sentence1, sentence2, similarity)
+
+
+@registry.tasks.register("softmax")
+def make_softmax(
+    dataset: Union[Dataset, DatasetDict],
+    sentence1: str,
+    sentence2: str,
+    label: str,
+) -> Softmax:
+    return Softmax(dataset, sentence1, sentence2, label)
