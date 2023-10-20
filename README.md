@@ -1,23 +1,20 @@
 # dfm-sentence-transformers
-Code for curating data and training sentence transformers for the Danish Foundation Models project.
+Code for training sentence transformers for the Danish Foundation Models project.
 
 ## Training
 
-Install the CLI:
+Install the package from PyPI:
 
 ```bash
-pip install dfm_sentence_trf
+pip install dfm-sentence-transformers
 ```
-
-WARNING: The package is not on PyPI yet, so this won't actually work as of yet.
-
-### Config system (_TODO_)
 
 You have to specify basic model and training parameters, as well as all the tasks/datasets the model should be trained on.
 
+Here is an example of a config:
 ```
 [model]
-name="dfm-sentence-encoder-small-v1"
+name="chcaa/dfm-sentence-encoder-small-v1"
 base_model="chcaa/dfm-encoder-small-v1"
 device="cpu"
 
@@ -37,32 +34,123 @@ sentence2="da"
 @loaders="load_dataset"
 path="strombergnlp/bornholmsk_parallel"
 
-[tasks.hestenet]
-@tasks="multiple_negatives_ranking"
-sentence1="question"
-sentence2="answer"
-
-[tasks.hestenet.dataset]
-@loaders="load_dataset"
-path="some/local/path"
-
 ```
 
 Then you can train a sentence transformer by using the `finetune` command.
 
 ```bash
-python3 -m dfm_sentence_trf training.cfg --output_folder "output/"
+python3 -m dfm_sentence_trf finetune training.cfg -o "model/"
 ```
 
 You can push the finetuned model to HuggingFace Hub:
 
 ```bash
-python3 -m dfm_sentence_trf training.cfg --model_path "output/" --organization "chcaa"
+python3 -m dfm_sentence_trf push_to_hub training.cfg --model_path "model/"
 ```
 
-## Tasks (_TODO_)
+## Evaluation
 
-### ContrastiveParallel (_TODO_)
+You can evaluate trained models with the [Scandinavian Embedding Benchmark](https://kennethenevoldsen.github.io/scandinavian-embedding-benchmark/).
 
-The task uses a contrastive loss on a parallel corpus, where negative examples (aka. non-matching sentence pairs labelled with 0) are randomly sampled.
-You can specify the dataset, and the number of negative samples for each positive sample. As well as basic training parameters.
+```bash
+pip install seb
+python3 -m seb "model/" "da"
+```
+
+## Tasks
+
+You can add an arbitrary number of tasks to the model's config.
+All tasks must have a unique name but their name is ignored in the actual training procedure.
+Datasets of tasks with the same loss function are mixed together so that the model can learn them simultaneously in mixed batches.
+The package comes with three default tasks you can use for different objectives:
+
+### 1. Multiple Negatives Ranking
+If you have a parallel corpus of sentences (paraphrase, translation, etc.) use this task.
+Batches consist of positive sentence pairs, and negative samples are constructed by taking all non-matching pairs in a batch.
+
+#### Parameters:
+
+Param | Type | Description | Default
+----- | ---- | ----------- | -------
+sentence1 | str | Name of the first sentence column in the dataset. | -
+sentence2 | str | Name of the second sentence column in the dataset. | -
+scale | float | Output of similarity function is multiplied by scale value. | 20.0
+
+```
+[tasks.faroese]
+@tasks="multiple_negatives_ranking"
+sentence1="fo"
+sentence2="da"
+
+[tasks.faroese.dataset]
+@loaders="load_dataset"
+path="strombergnlp/itu_faroese_danish"
+
+```
+
+### 2. Cosine Similarity
+Good for STS datasets.
+Minimizes mean squared error of estimated and true sentence cosine similairites.
+
+#### Parameters:
+
+Param | Type | Description | Default
+----- | ---- | ----------- | -------
+sentence1 | str | Name of the first sentence column in the dataset. | -
+sentence2 | str | Name of the second sentence column in the dataset. | -
+similarity | str | Name of the gold standard similarity column. | -
+
+```
+[tasks.sts]
+@tasks="cosine_similarity"
+sentence1="sent1"
+sentence2="sent1"
+similarity="label"
+
+[tasks.sts.dataset]
+...
+```
+
+### 3. Softmax
+Good for NLI datasets. Uses softmax classification loss based on concatenated embeddings and their difference.
+Beware that these tasks are never joined due to potentially different labeling schemes.
+
+#### Parameters:
+
+Param | Type | Description | Default
+----- | ---- | ----------- | -------
+sentence1 | str | Name of the first sentence column in the dataset. | -
+sentence2 | str | Name of the second sentence column in the dataset. | -
+label | str | Name of the label column in the dataset. | -
+
+```
+[tasks.nli]
+@tasks="softmax"
+sentence1="premise"
+sentence2="hypothesis"
+label="label"
+
+[tasks.nli.dataset]
+...
+```
+
+## Datasets
+
+Datasets for each task are loaded with :hugs: `load_dataset()` function, but only the first argument, and a name are accepted.
+You can use local or remote datasets, and they can be of any of the canonical file formats (JSON, JSONL, CSV, Parquet...).
+
+```
+...
+
+[tasks.local.dataset]
+@loaders="load_dataset"
+path="local/dataset/file.jsonl"
+
+...
+
+[tasks.huggingface_hub.dataset]
+@loaders="load_dataset"
+path="username/dataset"
+```
+
+
