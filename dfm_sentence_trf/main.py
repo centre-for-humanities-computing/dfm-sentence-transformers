@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import catalogue
 from confection import Config, registry
@@ -19,10 +19,14 @@ registry.loaders = catalogue.create(
 
 
 @registry.loaders.register("load_dataset")
-def _load_dataset(
-    path: str, name: Optional[str] = None
+def loaders_load_dataset(
+    path: str,
+    name: Optional[str] = None,
+    additional_arguments: Optional[dict[str, Any]] = None,
 ) -> Union[Dataset, DatasetDict]:
-    return load_dataset(path, name=name)  # type: ignore
+    if additional_arguments is None:
+        additional_arguments = dict()
+    return load_dataset(path, name=name, **additional_arguments)
 
 
 @cli.command(
