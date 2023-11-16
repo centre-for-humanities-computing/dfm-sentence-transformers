@@ -1,6 +1,6 @@
 from abc import abstractproperty
 from itertools import chain, groupby
-from typing import Callable, Iterable, Protocol, Union
+from typing import Callable, Iterable, List, Protocol, Tuple, Union
 
 from datasets import Dataset, DatasetDict
 from sentence_transformers import InputExample, SentenceTransformer
@@ -11,7 +11,7 @@ class Task(Protocol):
     dataset: Union[Dataset, DatasetDict]
 
     @abstractproperty
-    def examples(self) -> list[InputExample]:  # type: ignore
+    def examples(self) -> List[InputExample]:  # type: ignore
         pass
 
     @abstractproperty
@@ -19,14 +19,14 @@ class Task(Protocol):
         pass
 
 
-def join_examples(tasks: Iterable[Task]) -> list[InputExample]:
+def join_examples(tasks: Iterable[Task]) -> List[InputExample]:
     examples = (task.examples for task in tasks)
     return list(chain.from_iterable(examples))
 
 
 def to_objectives(
-    tasks: list[Task], model: SentenceTransformer, batch_size: int
-) -> list[tuple]:
+    tasks: List[Task], model: SentenceTransformer, batch_size: int
+) -> List[Tuple]:
     """Finalizes all objectives, joins all tasks that
     have the same loss function, this way the datasets from
     different objectives can be mixed in a batch."""
