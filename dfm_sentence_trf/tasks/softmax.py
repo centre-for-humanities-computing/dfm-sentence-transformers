@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 from datasets import Dataset, DatasetDict
 from sentence_transformers import InputExample, SentenceTransformer, losses
@@ -29,7 +29,7 @@ class Softmax(Task):
         return len(set(labels))
 
     @property
-    def examples(self) -> list[InputExample]:
+    def examples(self) -> List[InputExample]:
         examples = []
         if isinstance(self.dataset, Dataset):
             ds = self.dataset

@@ -1,4 +1,5 @@
 from random import randrange
+from typing import List
 
 
 def coinflip() -> bool:
@@ -7,7 +8,7 @@ def coinflip() -> bool:
 
 def collect_negative_ids(
     n_total: int, negative_samples: int, current_id: int
-) -> list[int]:
+) -> List[int]:
     negative_ids = []
     for _ in range(negative_samples):
         negative_id = current_id

@@ -3,7 +3,7 @@ line-length=79
 
 [tool.poetry]
 name = "dfm-sentence-transformers"
-version = "0.1.0"
+version = "0.2.0"
 description = "Module for finetuning dfm base-models to sentence transformers"
 authors = ["Márton Kardos <power.up1163@gmail.com>"]
 license = "MIT"
@@ -11,7 +11,7 @@ readme = "README.md"
 packages = [{include = "dfm_sentence_trf"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 confection = "^0.1.0"
 radicli = "^0.0.25"
 sentence-transformers = "^2.2.0"
