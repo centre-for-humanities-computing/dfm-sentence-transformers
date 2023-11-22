@@ -1,7 +1,10 @@
+import warnings
 from typing import List, Union
 
 from datasets import Dataset, DatasetDict
 from sentence_transformers import InputExample, SentenceTransformer, losses
+from sentence_transformers.evaluation import LabelAccuracyEvaluator
+from torch.utils.data import DataLoader
 
 from dfm_sentence_trf.tasks.task import Task
 
@@ -18,24 +21,35 @@ class Softmax(Task):
         self.sentence1 = sentence1
         self.sentence2 = sentence2
         self.label = label
+        if isinstance(self.dataset, Dataset):
+            self.train_ds = self.dataset
+            self.test_ds = None
+        else:
+            self.train_ds = self.dataset["train"]
+            self.test_ds = self.dataset["test"]
 
     @property
     def n_labels(self) -> int:
-        if isinstance(self.dataset, Dataset):
-            ds = self.dataset
-        else:
-            ds = self.dataset["train"]
-        labels = ds[self.label]
+        labels = self.train_ds[self.label]
         return len(set(labels))
 
     @property
     def examples(self) -> List[InputExample]:
         examples = []
-        if isinstance(self.dataset, Dataset):
-            ds = self.dataset
-        else:
-            ds = self.dataset["train"]
-        for entry in ds:
+        for entry in self.train_ds:
+            example = InputExample(
+                texts=[entry[self.sentence1], entry[self.sentence2]],
+                label=entry[self.label],
+            )
+            examples.append(example)
+        return examples
+
+    @property
+    def test_examples(self) -> List[InputExample]:
+        if self.test_ds is None:
+            return []
+        examples = []
+        for entry in self.test_ds:
             example = InputExample(
                 texts=[entry[self.sentence1], entry[self.sentence2]],
                 label=entry[self.label],
@@ -53,6 +67,17 @@ class Softmax(Task):
             )
 
         return _loss
+
+    def evaluate(self, model: SentenceTransformer) -> float:
+        if self.test_ds is None:
+            warnings.warn("No test data in task, returning 0 on evaluation.")
+            return 0
+        model_with_loss = self.loss(model)
+        test_loader = DataLoader(
+            self.test_examples, shuffle=True, batch_size=16
+        )
+        evaluator = LabelAccuracyEvaluator(test_loader)
+        return evaluator(model_with_loss)
 
     def __str__(self):
         # We have no reasonable way of telling if the labels mean the same,
