@@ -1,5 +1,10 @@
+<img align="left" width="82" height="82" src="assets/logo.svg">
+
 # dfm-sentence-transformers
-Code for training sentence transformers for the Danish Foundation Models project.
+
+<br>
+
+Sentence transformers for the Danish Foundation Models Project.
 
 ## Training
 
