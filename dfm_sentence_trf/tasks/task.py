@@ -1,4 +1,4 @@
-from abc import abstractproperty
+from abc import abstractmethod, abstractproperty
 from itertools import chain, groupby
 from typing import Callable, Iterable, List, Protocol, Tuple, Union
 
@@ -16,6 +16,10 @@ class Task(Protocol):
 
     @abstractproperty
     def loss(self) -> Callable:  # type: ignore
+        pass
+
+    @abstractmethod
+    def evaluate(self, model: SentenceTransformer) -> float:
         pass
 
 

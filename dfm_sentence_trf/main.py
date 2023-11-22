@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -8,9 +9,9 @@ from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 
 from dfm_sentence_trf.config import default_config
+from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
-import logging
 
 logger = logging.getLogger(__name__)
 cli = Radicli()
@@ -46,19 +47,26 @@ def loaders_load_dataset(
 def finetune(
     config_path: str,
     output_folder: str,
-    cache_folder: Optional[str] = None,
+    cache_folder: str = "./__model_cache",
 ):
     raw_config = Config().from_disk(config_path)
     raw_config = default_config.merge(raw_config)
+    wandb_project = raw_config["training"].get("wandb_project")
+    if wandb_project is not None:
+        import wandb
+
+        wandb.init(project=wandb_project, config=dict(raw_config))
+
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = dict()
     sent_trf_kwargs["device"] = cfg["model"]["device"]
-
-    if cache_folder is not None:
-        sent_trf_kwargs["cache_folder"] = cache_folder
+    sent_trf_kwargs["cache_folder"] = cache_folder
 
     logger.info("Initialize SentenceTransformer model")
-    embedding = models.Transformer(cfg["model"]["base_model"], max_seq_length=cfg["model"]["max_seq_length"])
+    embedding = models.Transformer(
+        cfg["model"]["base_model"],
+        max_seq_length=cfg["model"]["max_seq_length"],
+    )
     pooling = models.Pooling(
         word_embedding_dimension=embedding.get_word_embedding_dimension(),
     )
@@ -69,15 +77,32 @@ def finetune(
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
+    steps_per_epoch = cfg["training"]["steps_per_epoch"]
+
     tasks = list(cfg["tasks"].values())
+    evaluator = TaskListEvaluator(
+        dict(cfg["tasks"]), log_to_wandb=(wandb_project is not None)
+    )
     logger.info("Convert tasks to objectives")
     objectives = to_objectives(tasks, model, batch_size)
-    logger.info("Starting Model Training") 
-    model.fit(objectives, epochs=epochs, warmup_steps=warmup_steps)
+    logger.info("Starting Model Training")
+    model.fit(
+        objectives,
+        epochs=epochs,
+        warmup_steps=warmup_steps,
+        checkpoint_save_total_limit=20,
+        evaluator=evaluator,
+        steps_per_epoch=steps_per_epoch,
+    )
+
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True)
     model.save(output_folder)
     raw_config.to_disk(output_path.joinpath("config.cfg"))
+    if wandb_project is not None:
+        import wandb
+
+        wandb.finish()
 
 
 @cli.command(
