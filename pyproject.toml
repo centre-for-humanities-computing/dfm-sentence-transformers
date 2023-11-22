@@ -3,7 +3,7 @@ line-length=79
 
 [tool.poetry]
 name = "dfm-sentence-transformers"
-version = "0.3.1"
+version = "0.3.2"
 description = "Module for finetuning dfm base-models to sentence transformers"
 authors = ["Márton Kardos <power.up1163@gmail.com>"]
 license = "MIT"
