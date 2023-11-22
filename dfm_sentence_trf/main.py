@@ -8,6 +8,7 @@ from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 
 from dfm_sentence_trf.config import default_config
+from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
 
@@ -48,6 +49,12 @@ def finetune(
 ):
     raw_config = Config().from_disk(config_path)
     raw_config = default_config.merge(raw_config)
+    wandb_project = raw_config["training"].get("wandb_project")
+    if wandb_project is not None:
+        import wandb
+
+        wandb.init(project=wandb_project, config=dict(raw_config))
+
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = dict()
     sent_trf_kwargs["device"] = cfg["model"]["device"]
@@ -65,18 +72,27 @@ def finetune(
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
+
     tasks = list(cfg["tasks"].values())
+    evaluator = TaskListEvaluator(
+        dict(cfg["tasks"]), log_to_wandb=(wandb_project is not None)
+    )
     objectives = to_objectives(tasks, model, batch_size)
     model.fit(
         objectives,
         epochs=epochs,
         warmup_steps=warmup_steps,
         checkpoint_save_total_limit=20,
+        evaluator=evaluator,
     )
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True)
     model.save(output_folder)
     raw_config.to_disk(output_path.joinpath("config.cfg"))
+    if wandb_project is not None:
+        import wandb
+
+        wandb.finish()
 
 
 @cli.command(
