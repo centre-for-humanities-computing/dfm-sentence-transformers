@@ -67,7 +67,12 @@ def finetune(
     batch_size = cfg["training"]["batch_size"]
     tasks = list(cfg["tasks"].values())
     objectives = to_objectives(tasks, model, batch_size)
-    model.fit(objectives, epochs=epochs, warmup_steps=warmup_steps)
+    model.fit(
+        objectives,
+        epochs=epochs,
+        warmup_steps=warmup_steps,
+        checkpoint_save_total_limit=20,
+    )
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True)
     model.save(output_folder)
