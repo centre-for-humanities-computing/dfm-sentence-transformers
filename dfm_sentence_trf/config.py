@@ -9,6 +9,9 @@ default_config = Config(
             max_seq_length=128,
             steps_per_epoch=None,
         ),
-        model=dict(device="cpu"),
+        model=dict(
+            device="cpu",
+            max_seq_length=128,
+        ),
     ),
 )

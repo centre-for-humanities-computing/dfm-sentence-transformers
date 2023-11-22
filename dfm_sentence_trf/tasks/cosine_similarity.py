@@ -46,10 +46,11 @@ class CosineSimilarity(Task):
         if self.test_ds is None:
             warnings.warn("No test data in task, returning 0 on evaluation.")
             return 0
+        shuffled = self.test_ds.shuffle()[:1000]
         evaluator = EmbeddingSimilarityEvaluator(
-            sentences1=self.test_ds[self.sentence1],
-            sentences2=self.test_ds[self.sentence2],
-            scores=self.test_ds[self.similarity],
+            sentences1=shuffled[self.sentence1],
+            sentences2=shuffled[self.sentence2],
+            scores=shuffled[self.similarity],
         )
         return evaluator(model)
 

@@ -48,8 +48,9 @@ class Softmax(Task):
     def test_examples(self) -> List[InputExample]:
         if self.test_ds is None:
             return []
+        shuffled = self.test_ds.shuffle()[:1000]
         examples = []
-        for entry in self.test_ds:
+        for entry in shuffled:
             example = InputExample(
                 texts=[entry[self.sentence1], entry[self.sentence2]],
                 label=entry[self.label],

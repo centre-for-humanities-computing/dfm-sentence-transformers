@@ -47,9 +47,10 @@ class MultipleNegativesRanking(Task):
         if self.test_ds is None:
             warnings.warn("No test data in task, returning 0 on evaluation.")
             return 0
+        shuffled = self.test_ds.shuffle()[:1000]
         evaluator = TranslationEvaluator(
-            source_sentences=self.test_ds[self.sentence1],
-            target_sentences=self.test_ds[self.sentence2],
+            source_sentences=shuffled[self.sentence1],
+            target_sentences=shuffled[self.sentence2],
         )
         return evaluator(model)
 
