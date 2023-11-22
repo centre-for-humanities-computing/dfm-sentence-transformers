@@ -11,7 +11,9 @@ from dfm_sentence_trf.config import default_config
 from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
+import logging
 
+logger = logging.getLogger(__name__)
 cli = Radicli()
 
 registry.loaders = catalogue.create(
@@ -58,10 +60,12 @@ def finetune(
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = dict()
     sent_trf_kwargs["device"] = cfg["model"]["device"]
+
     if cache_folder is not None:
         sent_trf_kwargs["cache_folder"] = cache_folder
 
-    embedding = models.Transformer(cfg["model"]["base_model"])
+    logger.info("Initialize SentenceTransformer model")
+    embedding = models.Transformer(cfg["model"]["base_model"], max_seq_length=cfg["model"]["max_seq_length"])
     pooling = models.Pooling(
         word_embedding_dimension=embedding.get_word_embedding_dimension(),
     )
@@ -77,7 +81,9 @@ def finetune(
     evaluator = TaskListEvaluator(
         dict(cfg["tasks"]), log_to_wandb=(wandb_project is not None)
     )
+    logger.info("Convert tasks to objectives")
     objectives = to_objectives(tasks, model, batch_size)
+    logger.info("Starting Model Training") 
     model.fit(
         objectives,
         epochs=epochs,
@@ -85,6 +91,7 @@ def finetune(
         checkpoint_save_total_limit=20,
         evaluator=evaluator,
     )
+
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True)
     model.save(output_folder)
