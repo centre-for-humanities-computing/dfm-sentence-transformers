@@ -8,6 +8,8 @@ default_config = Config(
             batch_size=30,
             max_seq_length=128,
             steps_per_epoch=None,
+            checkpoint_repo=None,
+            wandb_project=None,
         ),
         model=dict(
             device="cpu",

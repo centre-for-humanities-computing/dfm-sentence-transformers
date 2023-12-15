@@ -1,4 +1,5 @@
 import logging
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -12,6 +13,7 @@ from dfm_sentence_trf.config import default_config
 from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
+from dfm_sentence_trf.training.train import fit_sentence_transformer
 
 logger = logging.getLogger(__name__)
 cli = Radicli()
@@ -46,8 +48,8 @@ def loaders_load_dataset(
 )
 def finetune(
     config_path: str,
-    output_folder: str,
-    cache_folder: str = "./__model_cache",
+    output_folder: str = "./model",
+    cache_folder: str = "./model_cache",
 ):
     raw_config = Config().from_disk(config_path)
     raw_config = default_config.merge(raw_config)
@@ -78,6 +80,7 @@ def finetune(
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
     steps_per_epoch = cfg["training"]["steps_per_epoch"]
+    checkpoint_repo = cfg["training"]["checkpoint_repo"]
 
     tasks = list(cfg["tasks"].values())
     evaluator = TaskListEvaluator(
@@ -86,14 +89,36 @@ def finetune(
     logger.info("Convert tasks to objectives")
     objectives = to_objectives(tasks, model, batch_size)
     logger.info("Starting Model Training")
-    model.fit(
+    # Getting an iterable of model checkpoints after each epoch
+    model_checkpoints = fit_sentence_transformer(
+        model,
         objectives,
         epochs=epochs,
         warmup_steps=warmup_steps,
-        checkpoint_save_total_limit=20,
         evaluator=evaluator,
         steps_per_epoch=steps_per_epoch,
     )
+    checkpoint_path = Path(cache_folder)
+    checkpoint_path.mkdir(exist_ok=True)
+    for i_epoch, checkpoint in enumerate(model_checkpoints):
+        # We will save the model and push it to hub
+        # if the user specifies a checkpoint repo.
+        checkpoint.save(str(checkpoint_path))
+        if checkpoint_repo is not None:
+            try:
+                save_to_hub(
+                    checkpoint,
+                    checkpoint_repo,
+                    commit_message=f"Saved model checkpoint after epoch {i_epoch}",
+                    exist_ok=True,
+                    replace_model_card=True,
+                )
+            except ValueError as error_message:
+                warnings.warn(
+                    "Couldn't push model checkpoint."
+                    "Did you forget to log into huggingface hub?\n"
+                    f"{error_message}"
+                )
 
     output_path = Path(output_folder)
     output_path.mkdir(exist_ok=True)
