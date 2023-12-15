@@ -19,14 +19,17 @@ You have to specify basic model and training parameters, as well as all the task
 Here is an example of a config:
 ```
 [model]
-name="chcaa/dfm-sentence-encoder-small-v1"
+name="dfm-sentence-encoder-small-v1"
 base_model="chcaa/dfm-encoder-small-v1"
 device="cpu"
 
 [training]
-epochs=5
+epochs=50
+steps_per_epoch=500
 warmup_steps=100
-batch_size=120
+batch_size=64
+wandb_project="dfm-sentence-transformers"
+checkpoint_repo="checkpoints-dfm-sentence-encoder-small-v1"
 
 [tasks]
 
