@@ -16,7 +16,10 @@ def finetune_with_angle(
     device: str = "cpu",
     warmup_steps: int = 100,
     pooling_mode: str = "mean",
+    max_seq_length: int = 512,
 ) -> AnglE:
+    if pooling_mode == "mean":
+        pooling_mode = "avg"
     ds = dataset.rename_columns(
         {sentence1: "text1", sentence2: "text2", label: "label"}
     )
@@ -27,14 +30,16 @@ def finetune_with_angle(
     except KeyError:
         test_ds = None
     angle = AnglE.from_pretrained(
-        base_model_name, pooling_strategy=pooling_mode
+        base_model_name,
+        pooling_strategy=pooling_mode,
+        max_length=max_seq_length,
     )
     angle.backbone.to(device)
     train_ds = train_ds.shuffle().map(
         AngleDataTokenizer(angle.tokenizer, angle.max_length), num_proc=8
     )
     if test_ds is not None:
-        test_ds = ds["validation_matched"].map(
+        test_ds = test_ds.map(
             AngleDataTokenizer(angle.tokenizer, angle.max_length), num_proc=8
         )
     angle.fit(

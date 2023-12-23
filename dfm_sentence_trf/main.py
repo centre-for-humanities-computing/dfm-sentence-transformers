@@ -226,7 +226,7 @@ def angle_finetune(
         device=device,
         epochs=epochs,
         batch_size=batch_size,
-        checkpoint_directorry=str(checkpoint_path),
+        checkpoint_directory=str(checkpoint_path),
         warmup_steps=warmup_steps,
     )
 
