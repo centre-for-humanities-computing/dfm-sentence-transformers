@@ -9,7 +9,7 @@ from datasets import Dataset, DatasetDict, load_dataset
 from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 
-from dfm_sentence_trf.config import default_config
+from dfm_sentence_trf.config import default_angle_config, default_config
 from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
@@ -171,3 +171,66 @@ def push_to_hub(
         exist_ok=exist_ok,
         replace_model_card=replace_model_card,
     )
+
+
+@cli.command(
+    "angle_finetune",
+    config_path=Arg(
+        help="Angle finetuning config file containing information about training."
+    ),
+    output_folder=Arg(
+        "--output-folder", "-o", help="Folder to save the finalized model."
+    ),
+    cache_folder=Arg(
+        "--cache-folder",
+        "-c",
+        help="Folder to cache models into while training.",
+    ),
+)
+def angle_finetune(
+    config_path: str,
+    output_folder: str = "./model",
+    cache_folder: str = "./model_cache",
+):
+    from dfm_sentence_trf.training.angle import (
+        angle_to_sentence_transformer,
+        finetune_with_angle,
+    )
+
+    raw_config = Config().from_disk(config_path)
+    raw_config = default_config.merge(raw_config)
+    cfg = registry.resolve(raw_config)
+    sent_trf_kwargs = dict()
+    sent_trf_kwargs["device"] = cfg["model"]["device"]
+    sent_trf_kwargs["cache_folder"] = cache_folder
+
+    logger.info("Initializing model")
+    base_model = cfg["model"]["base_model"]
+    max_seq_length = cfg["model"]["max_seq_length"]
+    epochs = cfg["training"]["epochs"]
+    warmup_steps = cfg["training"]["warmup_steps"]
+    batch_size = cfg["training"]["batch_size"]
+    dataset = cfg["angle"]["dataset"]
+    checkpoint_path = Path(cache_folder)
+    checkpoint_path.mkdir(exist_ok=True)
+
+    logger.info("Starting model training")
+    angle = finetune_with_angle(
+        base_model=base_model,
+        dataset=dataset,
+        sentence1=cfg["angle"]["sentence1"],
+        sentence2=cfg["angle"]["sentence2"],
+        label=cfg["angle"]["label"],
+        max_seq_length=max_seq_length,
+        epochs=epochs,
+        batch_size=batch_size,
+        checkpoint_directorry=str(checkpoint_path),
+        warmup_steps=warmup_steps,
+    )
+
+    logger.info("Turning model into SentenceTransformer.")
+    model = angle_to_sentence_transformer(base_model=base_model, angle=angle)
+    output_path = Path(output_folder)
+    output_path.mkdir(exist_ok=True)
+    model.save(output_folder)
+    raw_config.to_disk(output_path.joinpath("config.cfg"))
