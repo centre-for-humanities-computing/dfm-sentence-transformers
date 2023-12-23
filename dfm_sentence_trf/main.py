@@ -198,7 +198,7 @@ def angle_finetune(
     )
 
     raw_config = Config().from_disk(config_path)
-    raw_config = default_config.merge(raw_config)
+    raw_config = default_angle_config.merge(raw_config)
     cfg = registry.resolve(raw_config)
     sent_trf_kwargs = dict()
     sent_trf_kwargs["device"] = cfg["model"]["device"]
