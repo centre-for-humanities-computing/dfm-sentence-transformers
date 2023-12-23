@@ -56,6 +56,49 @@ You can push the finetuned model to HuggingFace Hub:
 python3 -m dfm_sentence_trf push_to_hub training.cfg --model_path "model/"
 ```
 
+## (__NEW__) Finetuning with AnglE
+
+You can finetune a model with AnglE on NLI or sentence similarity datasets.
+AnglE models have a different config format, namely:
+
+```
+[model]
+...
+
+[training]
+epochs=5
+batch_size=32
+warmup_steps=100
+
+[angle]
+sentence1="premise"
+sentence2="hypothesis"
+label="label"
+
+[angle.dataset]
+@loaders="load_dataset"
+path="kardosdrur/nb-nli"
+```
+
+AnglE models can only be trained on one supervised task,
+where the label is correlated with semantic similarity.
+
+Note that you have to manually install AnglE.
+
+```bash
+pip install angle_emb
+```
+
+Then you can finetune:
+
+```bash
+python3 -m dfm_sentence_trf angle_finetune "config.cfg" -o "model/"
+```
+
+Models can be pushed to the hub the same way as everything else.
+We recommend that you pretrain on sentence pair datasets and then finetune with angle
+on NLI or STS tasks.
+
 ## Evaluation
 
 You can evaluate trained models with the [Scandinavian Embedding Benchmark](https://kennethenevoldsen.github.io/scandinavian-embedding-benchmark/).
