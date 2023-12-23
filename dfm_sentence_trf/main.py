@@ -210,18 +210,20 @@ def angle_finetune(
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
+    device = cfg["model"]["device"]
     dataset = cfg["angle"]["dataset"]
     checkpoint_path = Path(cache_folder)
     checkpoint_path.mkdir(exist_ok=True)
 
     logger.info("Starting model training")
     angle = finetune_with_angle(
-        base_model=base_model,
+        base_model_name=base_model,
         dataset=dataset,
         sentence1=cfg["angle"]["sentence1"],
         sentence2=cfg["angle"]["sentence2"],
         label=cfg["angle"]["label"],
         max_seq_length=max_seq_length,
+        device=device,
         epochs=epochs,
         batch_size=batch_size,
         checkpoint_directorry=str(checkpoint_path),
