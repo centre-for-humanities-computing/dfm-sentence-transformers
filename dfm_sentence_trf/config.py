@@ -31,3 +31,12 @@ default_angle_config = Config(
         ),
     ),
 )
+
+default_cleaning_config = Config(
+    dict(
+        cleaning=dict(batch_size=1000, specificity=1.2),
+        model=dict(
+            device="cpu",
+        ),
+    ),
+)

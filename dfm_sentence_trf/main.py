@@ -1,3 +1,4 @@
+import json
 import logging
 import warnings
 from pathlib import Path
@@ -8,9 +9,12 @@ from confection import Config, registry
 from datasets import Dataset, DatasetDict, load_dataset
 from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
+from tqdm import tqdm
 
-from dfm_sentence_trf.config import default_angle_config, default_config
+from dfm_sentence_trf.config import (default_angle_config,
+                                     default_cleaning_config, default_config)
 from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
+from dfm_sentence_trf.filtering.cleaning import generate_cleaned_pairs
 from dfm_sentence_trf.hub import save_to_hub
 from dfm_sentence_trf.tasks import to_objectives
 from dfm_sentence_trf.training.train import fit_sentence_transformer
@@ -192,10 +196,8 @@ def angle_finetune(
     output_folder: str = "./model",
     cache_folder: str = "./model_cache",
 ):
-    from dfm_sentence_trf.training.angle import (
-        angle_to_sentence_transformer,
-        finetune_with_angle,
-    )
+    from dfm_sentence_trf.training.angle import (angle_to_sentence_transformer,
+                                                 finetune_with_angle)
 
     raw_config = Config().from_disk(config_path)
     raw_config = default_angle_config.merge(raw_config)
@@ -236,3 +238,55 @@ def angle_finetune(
     output_path.mkdir(exist_ok=True)
     model.save(output_folder)
     raw_config.to_disk(output_path.joinpath("config.cfg"))
+
+
+@cli.command(
+    "clean_dataset",
+    config_path=Arg(help="Path to dataset config."),
+)
+def clean_dataset(
+    config_path: str,
+):
+    raw_config = Config().from_disk(config_path)
+    raw_config = default_cleaning_config.merge(raw_config)
+    cfg = registry.resolve(raw_config)
+    logger.info("Initialize SentenceTransformer model")
+    trf = SentenceTransformer(
+        cfg["cleaning"]["model"]["name"],
+        device=cfg["cleaning"]["model"]["device"],
+    )
+    specificity = cfg["cleaning"]["specificity"]
+    batch_size = cfg["cleaning"]["batch_size"]
+    dataset_name = cfg["cleaning"]["name"]
+    name = dataset_name.split("/")[-1]
+    out_filename = f"{name}.jsonl"
+    with open(out_filename, "w") as out_file:
+        for dataset_name, data in cfg["data"].items():
+            logger.info(f"Cleaning: {dataset_name}")
+            pairs = generate_cleaned_pairs(
+                trf,
+                dataset_name,
+                **data,
+                batch_size=batch_size,
+                specificity=specificity,
+            )
+            for entry in pairs:
+                out_file.write(json.dumps(entry) + "\n")
+    logger.info("Done.")
+
+
+@cli.command("push_dataset", config_path=Arg(help="Path to dataset config"))
+def push_dataset(config_path: str):
+    """Shuffes and pushes dataset to hub with a train and test split."""
+    raw_config = Config().from_disk(config_path)
+    cfg = default_cleaning_config.merge(raw_config)
+    # We do not resolve, since we don't want to load all the datasets again.
+    name = cfg["cleaning"]["name"].split("/")[-1]
+    out_filename = f"{name}.jsonl"
+    ds = Dataset.from_json(out_filename)
+    logger.info("Shuffling dataset.")
+    ds = ds.shuffle(seed=42)
+    logger.info("Splitting dataset.")
+    ds = ds.train_test_split(test_size=0.2)
+    logger.info("Pushing dataset to hub.")
+    ds.push_to_hub(cfg["cleaning"]["name"])
