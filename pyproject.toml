@@ -18,6 +18,8 @@ sentence-transformers = "^2.2.0"
 datasets = "^2.14.0"
 torch = "^2.1.0"
 catalogue = "^2.0.0"
+scikit-learn = "^1.2.0"
+tqdm = "^4.63.0"
 
 [build-system]
 requires = ["poetry-core"]
