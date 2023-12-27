@@ -56,9 +56,55 @@ You can push the finetuned model to HuggingFace Hub:
 python3 -m dfm_sentence_trf push_to_hub training.cfg --model_path "model/"
 ```
 
+## (__NEW__) Curating datasets with models you've pretrained
+
+Similarly to Microsoft's E5 we intend to train models on data that has been curated by models we've trained on huristic-based sentence pairs.
+We provide a CLI for filtering the dataset based on consistency.
+
+This is based on a batch-based strategy in which we take batches of sentence pairs, create a similarity matrix between left-side and right-side sentences.
+If a pair's similarity is over the 1-(1/(N*specificity))'th quantile of all similarities in the matrix,
+and is originally annotated as a pair by the heuristics, we accept it as a positive pair.
+We also assign hard negatives. These are pairs that have similarity in the lower quantile and are originally not annotated as a pair.
+
+The hard positive, hard negative scheme is employed so that we can use AnglE for finetuning the models on this curated data.
+
+The config scheme for data cleaning is the following:
+```
+[cleaning]
+batch_size=1000
+specificity=1.2
+name="kardosdrur/folketing-wiki-clean"
+
+[cleaning.model]
+...(same as everywhere else)
+
+[data]
+
+[data.folketinget]
+sentence1="comment"
+sentence2="response"
+
+[data.folketinget.dataset]
+@loaders="load_dataset"
+path="kardosdrur/folketinget-discussions"
+```
+
+Then you can clean the dataset:
+
+```bash
+python3 -m dfm_sentence_trf clean_dataset "config.cfg"
+```
+This will produce the JSONL file `<dataset_name>.jsonl` containing all examples.
+
+Datasets can then be shuffled, split and pushed to the hub with the `push_dataset` command.
+
+```bash
+python3 -m dfm_sentence_trf push_dataset "config.cfg"
+```
+
 ## (__NEW__) Finetuning with AnglE
 
-You can finetune a model with AnglE on NLI or sentence similarity datasets.
+You can finetune a model with AnglE on supervised tasks.
 AnglE models have a different config format, namely:
 
 ```
