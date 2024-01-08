@@ -79,6 +79,8 @@ def finetune(
         modules=[embedding, pooling],
         device=cfg["model"]["device"],
     )
+    model.to(cfg["model"]["device"])
+    print(f"Model is on {model.device}")
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
