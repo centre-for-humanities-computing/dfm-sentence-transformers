@@ -2,8 +2,11 @@ import json
 from typing import Iterable, List, Optional, Tuple
 
 import torch
-from sentence_transformers import (__MODEL_HUB_ORGANIZATION__,
-                                   SentenceTransformer, __version__)
+from sentence_transformers import (
+    __MODEL_HUB_ORGANIZATION__,
+    SentenceTransformer,
+    __version__,
+)
 from sentence_transformers.evaluation import SentenceEvaluator
 from sentence_transformers.model_card_templates import ModelCardTemplate
 from sentence_transformers.util import batch_to_device, fullname
@@ -29,6 +32,7 @@ def fit_sentence_transformer(
     The function yields the current state of the model after each epoch,
     this allows top-level users to do anything with it.
     """
+    print(f"Training on {sentence_transformer.device}")
     optimizer_class = torch.optim.AdamW
     info_loss_functions = []
     for dataloader, loss in train_objectives:

@@ -12,7 +12,7 @@ default_config = Config(
             wandb_project=None,
         ),
         model=dict(
-            device="cpu",
+            device=None,
             max_seq_length=128,
         ),
     ),

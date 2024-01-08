@@ -11,8 +11,11 @@ from radicli import Arg, Radicli
 from sentence_transformers import SentenceTransformer, models
 from tqdm import tqdm
 
-from dfm_sentence_trf.config import (default_angle_config,
-                                     default_cleaning_config, default_config)
+from dfm_sentence_trf.config import (
+    default_angle_config,
+    default_cleaning_config,
+    default_config,
+)
 from dfm_sentence_trf.evaluation.task_evaluator import TaskListEvaluator
 from dfm_sentence_trf.filtering.cleaning import generate_cleaned_pairs
 from dfm_sentence_trf.hub import save_to_hub
@@ -64,10 +67,6 @@ def finetune(
         wandb.init(project=wandb_project, config=dict(raw_config))
 
     cfg = registry.resolve(raw_config)
-    sent_trf_kwargs = dict()
-    sent_trf_kwargs["device"] = cfg["model"]["device"]
-    sent_trf_kwargs["cache_folder"] = cache_folder
-
     logger.info("Initialize SentenceTransformer model")
     embedding = models.Transformer(
         cfg["model"]["base_model"],
@@ -77,9 +76,9 @@ def finetune(
         word_embedding_dimension=embedding.get_word_embedding_dimension(),
     )
     model = SentenceTransformer(
-        modules=[embedding, pooling], **sent_trf_kwargs
+        modules=[embedding, pooling],
+        device=cfg["model"]["device"],
     )
-
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
     batch_size = cfg["training"]["batch_size"]
@@ -196,8 +195,10 @@ def angle_finetune(
     output_folder: str = "./model",
     cache_folder: str = "./model_cache",
 ):
-    from dfm_sentence_trf.training.angle import (angle_to_sentence_transformer,
-                                                 finetune_with_angle)
+    from dfm_sentence_trf.training.angle import (
+        angle_to_sentence_transformer,
+        finetune_with_angle,
+    )
 
     raw_config = Config().from_disk(config_path)
     raw_config = default_angle_config.merge(raw_config)
