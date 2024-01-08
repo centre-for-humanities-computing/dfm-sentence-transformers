@@ -4,10 +4,10 @@ import catalogue
 from confection import registry
 from datasets import Dataset, DatasetDict
 
+from dfm_sentence_trf.tasks.contrastive import Contrastive
 from dfm_sentence_trf.tasks.cosine_similarity import CosineSimilarity
-from dfm_sentence_trf.tasks.multiplenegativeranking import (
-    MultipleNegativesRanking,
-)
+from dfm_sentence_trf.tasks.multiplenegativeranking import \
+    MultipleNegativesRanking
 from dfm_sentence_trf.tasks.softmax import Softmax
 from dfm_sentence_trf.tasks.task import Task, to_objectives
 
@@ -50,3 +50,13 @@ def make_softmax(
     label: str,
 ) -> Softmax:
     return Softmax(dataset, sentence1, sentence2, label)
+
+
+@registry.tasks.register("constrastive")
+def make_contrastive(
+    dataset: Union[Dataset, DatasetDict],
+    sentence1: str,
+    sentence2: str,
+    label: str,
+) -> Contrastive:
+    return Contrastive(dataset, sentence1, sentence2, label)
