@@ -68,18 +68,24 @@ def finetune(
 
     cfg = registry.resolve(raw_config)
     logger.info("Initialize SentenceTransformer model")
-    embedding = models.Transformer(
-        cfg["model"]["base_model"],
-        max_seq_length=cfg["model"]["max_seq_length"],
-    )
-    pooling = models.Pooling(
-        word_embedding_dimension=embedding.get_word_embedding_dimension(),
-    )
-    model = SentenceTransformer(
-        modules=[embedding, pooling],
-        device=cfg["model"]["device"],
-    )
-    model.to(cfg["model"]["device"])
+    try:
+        model = SentenceTransformer(
+            cfg["model"]["base_model"], device=cfg["model"]["device"]
+        )
+        model.to(cfg["model"]["device"])
+    except Exception:
+        embedding = models.Transformer(
+            cfg["model"]["base_model"],
+            max_seq_length=cfg["model"]["max_seq_length"],
+        )
+        pooling = models.Pooling(
+            word_embedding_dimension=embedding.get_word_embedding_dimension(),
+        )
+        model = SentenceTransformer(
+            modules=[embedding, pooling],
+            device=cfg["model"]["device"],
+        )
+        model.to(cfg["model"]["device"])
     print(f"Model is on {model.device}")
     epochs = cfg["training"]["epochs"]
     warmup_steps = cfg["training"]["warmup_steps"]
