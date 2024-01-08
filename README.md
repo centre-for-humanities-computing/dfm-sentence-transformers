@@ -231,6 +231,28 @@ label="label"
 ...
 ```
 
+### 4. Contrastive (new in 0.3.6)
+Contrastive loss for hard negative and hard positive pairs.
+
+#### Parameters:
+
+Param | Type | Description | Default
+----- | ---- | ----------- | -------
+sentence1 | str | Name of the first sentence column in the dataset. | -
+sentence2 | str | Name of the second sentence column in the dataset. | -
+label | str | Name of the label column in the dataset. | -
+
+```
+[tasks.contrastive]
+@tasks="contrastive"
+sentence1="text1"
+sentence2="text2"
+label="label"
+
+[tasks.contrastive.dataset]
+...
+```
+
 ## Datasets
 
 Datasets for each task are loaded with :hugs: `load_dataset()` function, but only the first argument, and a name are accepted.
